@@ -1,0 +1,246 @@
+---
+title: "Cost of Living in Various Cities Around the World"
+author: "Eshaa Sood"
+date: "4/29/2020"
+output: html_document
+runtime: shiny
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, out.width = "650px", fig.align ="center",echo=FALSE}
+knitr::include_graphics("city_pic.jpg")
+```
+
+
+# Introduction
+Through this project I am trying to find the top 5 most expensive cities to stay in around the world based on various factors like education, food, housing, transportation, income, entertainment and clothing costs. I am also trying to find a correlation between these factors and analyze the role each factor plays in deciding the cost of living in a city and find the factors the cost of living is highly correlated to. I would also be developing a prediction model that would predict the cost of living of a particular city given the values of each of the predictor variables. The complete (full model) and reduced model would be compared to find which of the two models is more accurate.
+
+I decided to work on this data set as I found it very interesting and something that would be help me get globally aware and analyze all factors that go into deciding the cost of living in a particular city.
+
+
+# Data Set
+The data set is taken from Kaggle.com (https://www.kaggle.com/stephenofarrell/cost-of-living) The data set is collected from the popular website numbeo, it gives a comparison of the cost of living in various cities, The currency is in Euro.The data set consists of 160 cities as columns and 55 items as rows (eg cost of Coke/Pepsi (0.33 liter bottle), cost of One-way Ticket (Local Transport), Price per Square Meter to Buy Apartment in City Centre etc) on which comparison is drawn. 
+
+Here each of the 55 items are the rows and there are 160 cities as columns, as there are a lot of rows and columns I have just displayed the first 15 items and first 15 cities to get an idea of how the data set looks like
+```{r part1, echo=FALSE}
+cat("The first 15 rows and first 15 columns of the original dataset are:")
+cost <- read.csv(file = 'cost-of-living_dataset.csv')
+cost[1:15,1:15]
+```
+
+
+### Transformations on the data set
+The data set consistes of 55 items on which comparison is drawn. I have therefore created a function that first makes the rows as columns and vice versa resulting the various cities to become rows and various items as columns. The function then groups each of the 55 items in 7 major categories i.e food_beverages cost, transportation cost, housing_utility cost, entertainment_fitness cost, clothing_footwear cost, the gross income and education cost. The 8th column gives the sum of all these categories and gives the total cost of living as a whole.Columns that were added to each of the categories are visible in the function definition below.
+
+For a user to successfully run the function he/she should pass the correct data set else the function would return an error as seen in the function definition below.
+
+
+```{r global_options, include=TRUE}
+
+data_transformation <- function(data) {
+if((all.equal(data,cost)) == "FALSE"){
+        cat("Error, wrong data set passed, transformation cannot be made")
+}
+
+else{
+df2 <- data.frame(t(data[-1]))
+colnames(df2) <- data[, 1]
+
+food_beverages <- df2[,"Meal, Inexpensive Restaurant"] + df2[,"Meal for 2 People, Mid-range Restaurant, Three-course"] + df2[,"McMeal at McDonalds (or Equivalent Combo Meal)"] 
++ df2[,"Domestic Beer (0.5 liter draught)"] + df2["Imported Beer (0.33 liter bottle)"] + df2[,"Coke/Pepsi (0.33 liter bottle)"] + df2[,"Water (0.33 liter bottle) "] + 
+df2[,"Milk (regular), (1 liter)"] + df2[,"Loaf of Fresh White Bread (500g)"] + df2[,"Eggs (regular) (12)"] + df2[,"Local Cheese (1kg)"] + df2[,"Water (1.5 liter bottle)"] +
+df2[,"Bottle of Wine (Mid-Range)"] + df2[,"Domestic Beer (0.5 liter bottle)"] + df2[,"Imported Beer (0.33 liter bottle)"] + df2[,"Cigarettes 20 Pack (Marlboro)"] +
+df2[,"Chicken Breasts (Boneless, Skinless), (1kg)"] + df2[,"Apples (1kg)"] + df2[,"Oranges (1kg)"] + df2[,"Potato (1kg)"] + df2[,"Lettuce (1 head)"] + df2[,"Cappuccino (regular)"]
++ df2[,"Rice (white), (1kg)"] + df2[,"Tomato (1kg)"] + df2[,"Banana (1kg)"] + df2[,"Onion (1kg)"] +df2[,"Beef Round (1kg) (or Equivalent Back Leg Red Meat)"]
+
+
+transportation <- df2[,"One-way Ticket (Local Transport)"] + df2[,"Monthly Pass (Regular Price)"] + df2[,"Gasoline (1 liter)"] + df2[,"Volkswagen Golf"] + df2[,"Taxi 1km (Normal Tariff)"]
++ df2[,"Taxi Start (Normal Tariff)"] + df2[,"Taxi 1hour Waiting (Normal Tariff)"] + df2[,"Toyota Corolla 1.6l 97kW Comfort (Or Equivalent New Car)"]
+
+
+living_utility <- df2[,"Apartment (1 bedroom) in City Centre"] + df2[,"Apartment (1 bedroom) Outside of Centre"] + df2[,"Apartment (3 bedrooms) in City Centre"] + 
+df2[,"Apartment (3 bedrooms) Outside of Centre"] + df2[,"Basic (Electricity, Heating, Cooling, Water, Garbage) for 85m2 Apartment"] + 
+df2[,"1 min. of Prepaid Mobile Tariff Local (No Discounts or Plans)"] + df2[,"Internet (60 Mbps or More, Unlimited Data, Cable/ADSL)"] + df2[,"Price per Square Meter to Buy Apartment in City Centre"]
++ df2[,"Price per Square Meter to Buy Apartment Outside of Centre"] +  + df2[,"Mortgage Interest Rate in Percentages (%), Yearly, for 20 Years Fixed-Rate"]
+
+
+entertainment_fitness <- df2[,"Fitness Club, Monthly Fee for 1 Adult"] + df2[,"Tennis Court Rent (1 Hour on Weekend)"] + df2[,"Cinema, International Release, 1 Seat"]
+
+
+clothing_footwear <- df2[,"1 Pair of Jeans (Levis 501 Or Similar)"] + df2[,"1 Summer Dress in a Chain Store (Zara, H&M, ...)"] + df2[,"1 Pair of Nike Running Shoes (Mid-Range)"]
++ df2[,"1 Pair of Men Leather Business Shoes"]
+
+
+income <- df2[,"Average Monthly Net Salary (After Tax)"]
+
+education <- df2[,"Preschool (or Kindergarten), Full Day, Private, Monthly for 1 Child"] + df2[,"International Primary School, Yearly for 1 Child"]
+
+cost_of_living <- food_beverages + transportation + living_utility + entertainment_fitness + clothing_footwear + income + education
+
+
+countries <- rownames(df2)
+
+ df3<- data.frame("food_beverages" = food_beverages , "transportation" = transportation, "housing_utility" = living_utility , "entertainment_fitness" = entertainment_fitness, "clothing_footwear" = clothing_footwear, "income" = income, "education" = education, "cost_of_living" = cost_of_living)
+ data<- data.frame(df3, row.names = countries)
+ print("After transformation the data set looks like")
+ 
+ return(data) 
+}
+}
+
+```
+
+The first 5 rows after applying this tranformation function looks like below:
+
+```{r part2, echo=TRUE}
+
+data = data_transformation(cost)
+print(head(data))
+```
+
+```{r numeric-input, echo=FALSE, warning=FALSE}
+library(shiny)
+numericInput(inputId = 'Inputexample', label = 'Enter the row number you wish to view of the transformed data set', value = "0",min = NA, max = NA, width = NULL)
+renderPrint(data[input$Inputexample,])
+```
+
+
+# Analysis
+After sorting the data according to the cost_of_living the top 5 most expensive cities that can be concluded from the data set are as follows, also the  cost_of_living in the top 5 cities can be seen in the plot.
+```{r part3, echo=FALSE}
+
+newdata_cost_of_living <- data[order(-data$cost_of_living),]
+x_cost_of_living <- rownames(newdata_cost_of_living[1:5,])
+y_cost_of_living <- newdata_cost_of_living[1:5,"cost_of_living"]
+
+for(i in (1:5)){
+        print(c(x_cost_of_living[i],y_cost_of_living[i]))
+}
+plot((y_cost_of_living), type = "p")
+```
+
+
+### Analyzing the cost of living
+```{r part4, echo=FALSE}
+cat("The minimum cost of living among all cities is:",min(data$cost_of_living))
+cat("The maximum cost of living among all cities is",max(data$cost_of_living))
+range = max(data$cost_of_living) - min(data$cost_of_living)
+cat("The range of cost of living among all cities is",range)
+```
+
+
+
+```{r numeric-input 2, echo= FALSE, warning=FALSE}
+library(shiny)
+numericInput(inputId = 'Inputexample1', label = 'Enter the number of the expensive city you wish to view from the top', value = "0",min = NA, max = NA, width = NULL)
+x_cost_of_living1 <- rownames(newdata_cost_of_living)
+y_cost_of_living1 <- newdata_cost_of_living[,"cost_of_living"]
+renderPrint(c(x_cost_of_living1[input$Inputexample1],y_cost_of_living1[input$Inputexample1]))
+```
+
+### Correlation Analysis
+Correlation analysis is a statistical method used to evaluate the strength of relationship between two quantitative variables. A high correlation means that two or more variables have a strong relationship with each other, while a weak correlation means that the variables are hardly related.
+"ggpubr" library can be used to find correlation between the various variables.
+
+```{r part5, echo=FALSE, warning=FALSE, message=FALSE}
+install.packages("ggplot2",repos = "https://www.rdocumentation.org/packages/ggplot2/versions/3.2.1")
+install.packages("ggpubr", repos = "https://www.rdocumentation.org/packages/ggpubr/versions/0.2.5")
+library(ggplot2);
+library(ggpubr);
+
+print("Using the library ggpubr, correlation between the variables is:")
+cor(data) 
+
+model_corr <- lm(cost_of_living ~ housing_utility  + income + education, data = data)
+#extractAIC(model_corr)
+```
+
+From the result above we can say the cost_of_living is greatly correlated to housing_utility cost,education cost and gross income
+
+# Prediction Model
+```{r part6, echo=FALSE, warning=FALSE, message=FALSE}
+model <- lm(cost_of_living ~ food_beverages + transportation + housing_utility + entertainment_fitness + clothing_footwear + income + education, data = data)
+summary(model)
+model_new <- data.frame(food_beverages = 41.09 ,transportation = 19333.47, housing_utility = 5081.65, entertainment_fitness = 49.74, clothing_footwear = 184.99, income = 645.94, education = 5800.69)
+cat("Checking accuracy of model by giving ground truth data")
+cat('Predicting cost of living when the values of 1st row are given i.e for the city Saint.Petersburg..Russia is :')
+predict(model,newdata = model_new)
+plot(model)
+```
+
+The prediction model gave really accurate results on ground data as seen above for Saint.Petersburg..Russia.
+The normal QQ_Plot is consistent with linearity therefore we can conclude the experimental errors of the data are normally distributed.
+Also the plot between fitted values and residuals seems to be equally distributed and therefore there seems to be Homogeneity of variances. Thus the above plots show that the ANOVA assumptions seem to be satisfied.
+
+
+### Comparing full prediction model to reduced prediction model
+The full prediction model consists of taking into consideration all the predictor variables i.e food_beverages cost,transportation cost, housing_utility cost, entertainment_fitness cost, clothing_footwear cost, gross income and education cost.
+Whereas the reduced model consists of taking into consideration only the predictor variables that are the most greatly correlated to the cost of living i.e housing_utility cost, education cost and gross income
+
+Null Hypothesis : Reduced Model is appropriate
+
+Alternative Hypothesis : Reduced Model is not appropriate
+
+```{r part7, echo=FALSE, warning=FALSE, message=FALSE}
+anova(model_corr,model)
+
+cat('The AIC value of Full model is:',extractAIC(model))
+cat('The AIC value of Reduced model is:',extractAIC(model_corr))
+cat('The output of stepwise function is:')
+library(MASS)
+out1 <- stepAIC(model, 
+                scope = list(upper = ~ food_beverages + transportation + housing_utility + entertainment_fitness + clothing_footwear + income + education, lower = ~1),
+                direction = "both")
+```
+
+The p-value of ANOVA is 2.2e-16, which implies we reject the null hypothesis.
+Conclusion : Reduced model is not appropriate.
+
+Akaike information criterion (AIC) (Akaike, 1974) is a fined technique based on in-sample fit to estimate the likelihood of a model to predict/estimate the future values. A good model is the one that has minimum AIC among all the other models.
+The full models has a lower AIC value as compared to reduced model.
+The stepwise method also suggests the full model as better model.
+Therefore ANOVA, AIC values and stepwise method all suggest full model is better than the reduced model.
+
+
+### Checking for multicollinearity
+```{r part8, echo=FALSE, warning=FALSE, message=FALSE}
+library(car)
+vif(model)
+```
+
+Multicollinearity is a term used to describe when two or more predictors in the regression model are highly correlated. 
+VIF measures how much the variance of an estimated regression coefficient increases if your predictors are correlated. More variation is bad news; If the variance of the coefficients increases, the model isn't going to be as reliable. 
+Assuming threshold is 10, there seems to be no issue of multicollinearity in the model as all predictor variables have vif value less than 10.
+
+
+# Packages used
+1. Shinny -  Build interactive web apps
+2. ggplot2 - For data visualization
+3. ggpubr - Provides some easy-to-use functions for creating and customizing 'ggplot2'- based publication ready plots, correlation analysis
+4. MASS - Support Functions and Datasets for Venables and Ripley's MASS
+5. car - Stands for Companion to Applied Regression
+
+# Summary
+Through the transformation function the rows and columns were interchanged and the 55 items were grouped into 7 major categories for effective and simpler analysis. The cost of living for each city was calculated as the sum of all the 7 cost variables i.e food_beverages cost, transportation cost, housing_utility cost, entertainment_fitness cost, clothing_footwear cost, education cost and gross income. The data set was then sorted in decreasing order of cost of living and I thus obtained the top 5 most expensive cities to stay in around the world. The shinny app can be used to find a particular row in the transformed data set and also the cost of living of a particular city from the top by inputting an integer in each of text box respectively..
+
+Further I used the "ggpubr" library to calculate correlation between the 7 variables to find the variables that were most strongly correlated to the cost of living and found that housing_utility cost,education cost and gross income were the most highly correlated and thus I could imply these 3 factors can greatly impact the cost of living in a city. I developed a prediction model to predict the cost of living in a particular city when the values of each of the predictor variables were given. Evaluated the performance of the model on the given data and got really accurate results. Also, compared the full and reduced model(considering only variables having high correlation to the cost of living) found that the full model was better than the reduced model. This decision was based on the results of ANOVA, AIC value and stepwise method. Also there seemed to be no issue of multicollinearity based on the vif value. 
+
+This data set considers only values for curent year. In future, data for mutiple years can be collected and then similar methods can be used to get more accurate and better results.
+
+# Bio
+```{r, out.width = "250px", fig.align ="center",echo=FALSE}
+knitr::include_graphics("Eshaa_pic.JPG")
+```
+
+I am a Computer Science graduate student specializing in the field of Data Science and Machine Learning. I like to call myself a "Data Enthusiast" as I love to work around data, solve statistical questions and build intelligent models
+
+# References
+https://www.kaggle.com/stephenofarrell/cost-of-living
+
+https://www.rdocumentation.org/packages/ggpubr/versions/0.2.5
+
+https://www.google.com/search?q=new+york+city+jpg&client=firefox-b-1-d&sxsrf=ALeKk00M9GoI1eRdmQrfJKF2ljfaRa1q9w:1587738305178&tbm=isch&source=iu&ictx=1&fir=GjzENpVWZdovhM%253A%252CnSxX5PrlNjMHHM%252C_&vet=1&usg=AI4_-kQuJhV1MgA0wZxHN0x1qgfCMRXWvA&sa=X&ved=2ahUKEwirirSNooHpAhXulOAKHU42Ci0Q9QEwAHoECAoQIg#imgrc=iVN4dxlt7iwHZM
